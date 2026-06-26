@@ -26,6 +26,7 @@ window.__CG__ = {
     isDebug: {{ $isDebugMode ? 'true' : 'false' }},
     roboImages: {
         falando:    "{{ asset('images/robo/falando.png') }}",
+        aguardando: "{{ asset('images/robo/aguardando.png') }}",
         deliciando: "{{ asset('images/robo/deliciando.png') }}",
         triste:     "{{ asset('images/robo/triste.png') }}",
     },
@@ -168,41 +169,76 @@ window.__CG__ = {
         @endif
     </div>
 
-    {{-- BOTTOM: card único com instrução + feedback + botão --}}
+    {{-- BOTTOM: robô + mensagem + botão flutuante --}}
     <div id="overlay-bottom"
         style="display:none;position:absolute;bottom:0;left:0;right:0;
                padding:0 16px max(env(safe-area-inset-bottom,20px),20px) 16px;">
 
+        {{-- ── BOTÃO PRINCIPAL + AÇÕES SECUNDÁRIAS (fora da card) ── --}}
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px;">
+
+            <button id="btn-capture" onclick="CozinhaGuiada.captureOrVerify()" disabled
+                style="padding:14px 52px;border-radius:100px;
+                       background:linear-gradient(135deg,#b85c08 0%,#e8941a 100%);
+                       color:#fff;border:none;font-family:inherit;font-size:17px;font-weight:800;
+                       cursor:not-allowed;opacity:.32;letter-spacing:-.1px;white-space:nowrap;
+                       transition:opacity .3s,box-shadow .35s;box-shadow:none;
+                       box-shadow:0 4px 24px rgba(0,0,0,.4);"
+                aria-label="Capturar foto">
+                📸 Pronto!
+            </button>
+
+            <div style="display:flex;align-items:center;gap:16px;">
+                <div id="manual-advance-area"
+                    style="{{ ($state['step']['allow_manual_advance'] ?? false) ? '' : 'visibility:hidden;' }}">
+                    <button id="btn-advance-manually" onclick="CozinhaGuiada.advanceManually()"
+                        style="background:none;border:none;color:rgba(255,255,255,.4);
+                               font-size:12px;font-family:inherit;cursor:pointer;padding:0;
+                               text-decoration:underline;text-underline-offset:3px;">
+                        Avançar mesmo assim
+                    </button>
+                </div>
+                @if($isMockMode)
+                <button onclick="CozinhaGuiada.toggleMockPanel()"
+                    style="background:rgba(255,200,50,.12);border:1px solid rgba(255,200,50,.22);
+                           border-radius:10px;padding:5px 10px;color:rgba(255,200,50,.65);
+                           font-size:11px;font-family:inherit;cursor:pointer;">🔧</button>
+                @endif
+            </div>
+        </div>
+
+        {{-- ── CARD: robô + mensagem ── --}}
         <div id="bottom-card"
             style="background:rgba(10,10,8,.72);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-                   border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:18px 18px 14px 18px;
+                   border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:14px 14px 14px 14px;
                    transition:background .35s ease,border-color .35s ease;">
 
-            {{-- ── LINHA ROBÔ + CONTEÚDO ── --}}
-            <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:11px;">
+            <div style="display:flex;align-items:flex-end;gap:10px;">
 
                 {{-- Robozinha --}}
                 <img id="robo-char"
                      src="{{ asset('images/robo/falando.png') }}"
                      alt=""
-                     style="width:72px;height:108px;object-fit:contain;object-position:bottom center;
-                            flex-shrink:0;transition:opacity .2s ease;" />
+                     style="width:130px;height:200px;object-fit:contain;object-position:bottom center;
+                            flex-shrink:0;transition:opacity .2s ease;
+                            margin-top:-140px;position:relative;z-index:2;
+                            filter:drop-shadow(0 8px 24px rgba(0,0,0,.7));" />
 
                 {{-- Conteúdo: instrução ↔ feedback --}}
-                <div style="flex:1;min-width:0;">
+                <div style="flex:1;min-width:0;height:90px;overflow-y:auto;">
 
                     {{-- ── VISTA INSTRUÇÃO (padrão) ── --}}
                     <div id="view-instruction">
                         <p id="instruction-text"
-                            style="color:#fff;font-size:14px;line-height:1.45;margin:0 0 10px 0;">
+                            style="color:#fff;font-size:14px;line-height:1.45;margin:0 0 8px 0;">
                             {{ $state['step']['instruction'] ?? '' }}
                         </p>
 
-                        {{-- Erro inline (câmera, conexão, etc.) --}}
+                        {{-- Erro inline --}}
                         <div id="card-error"
                             style="display:none;background:rgba(140,20,20,.35);
                                    border:1px solid rgba(220,60,60,.3);border-radius:12px;
-                                   padding:9px 12px;margin-bottom:10px;">
+                                   padding:9px 12px;margin-bottom:8px;">
                             <div style="display:flex;align-items:flex-start;gap:8px;">
                                 <span style="font-size:14px;flex-shrink:0;">⚠️</span>
                                 <span id="card-error-text"
@@ -226,9 +262,8 @@ window.__CG__ = {
                     {{-- ── VISTA FEEDBACK (pós-análise) ── --}}
                     <div id="view-feedback" style="display:none;">
                         <p id="fb-text"
-                            style="color:#fff;font-size:14px;line-height:1.45;margin:0 0 10px 0;"></p>
-                        {{-- Barra de confiança --}}
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                            style="color:#fff;font-size:14px;line-height:1.45;margin:0 0 8px 0;"></p>
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
                             <span style="color:rgba(255,255,255,.35);font-size:11px;white-space:nowrap;">Confiança</span>
                             <div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.12);">
                                 <div id="fb-conf-bar"
@@ -237,8 +272,7 @@ window.__CG__ = {
                             <span id="fb-conf-val"
                                 style="color:rgba(255,255,255,.4);font-size:11px;min-width:30px;text-align:right;"></span>
                         </div>
-                        {{-- Itens detectados --}}
-                        <div id="fb-detected" style="display:none;margin-bottom:6px;">
+                        <div id="fb-detected" style="display:none;margin-bottom:4px;">
                             <div style="color:rgba(255,255,255,.3);font-size:11px;margin-bottom:5px;">Detectado:</div>
                             <div id="fb-detected-list" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
                         </div>
@@ -256,60 +290,33 @@ window.__CG__ = {
                     onmouseenter="this.style.background='rgba(255,255,255,.22)'"
                     onmouseleave="this.style.background='rgba(255,255,255,.12)'">🔊</button>
 
-            </div>{{-- /linha robô --}}
-
-            {{-- ── SEPARADOR ── --}}
-            <div style="height:1px;background:rgba(255,255,255,.07);margin:13px 0 13px;"></div>
-
-            {{-- ── BOTÃO PRINCIPAL (criativo, colorido) ── --}}
-            <div style="display:flex;justify-content:center;margin-bottom:10px;">
-                <button id="btn-capture" onclick="CozinhaGuiada.captureOrVerify()" disabled
-                    style="padding:14px 44px;border-radius:100px;
-                           background:linear-gradient(135deg,#b85c08 0%,#e8941a 100%);
-                           color:#fff;border:none;font-family:inherit;font-size:17px;font-weight:800;
-                           cursor:not-allowed;opacity:.32;letter-spacing:-.1px;white-space:nowrap;
-                           transition:opacity .3s,box-shadow .35s;box-shadow:none;"
-                    aria-label="Capturar foto">
-                    📸 Pronto!
-                </button>
-            </div>
-
-            {{-- ── AÇÕES SECUNDÁRIAS ── --}}
-            <div style="display:flex;align-items:center;gap:8px;">
-                <div id="manual-advance-area"
-                    style="{{ ($state['step']['allow_manual_advance'] ?? false) ? '' : 'visibility:hidden;' }}">
-                    <button id="btn-advance-manually" onclick="CozinhaGuiada.advanceManually()"
-                        style="background:none;border:none;color:rgba(255,255,255,.35);
-                               font-size:12px;font-family:inherit;cursor:pointer;padding:0;
-                               text-decoration:underline;text-underline-offset:3px;">
-                        Avançar mesmo assim
-                    </button>
-                </div>
-                <div style="flex:1;"></div>
-                @if($isMockMode)
-                <button onclick="CozinhaGuiada.toggleMockPanel()"
-                    style="background:rgba(255,200,50,.12);border:1px solid rgba(255,200,50,.22);
-                           border-radius:10px;padding:5px 10px;color:rgba(255,200,50,.65);
-                           font-size:11px;font-family:inherit;cursor:pointer;">🔧</button>
-                @endif
             </div>
         </div>
     </div>
 
-    {{-- CENTRO: spinner de análise --}}
+    {{-- CENTRO: overlay de carregamento --}}
     <div id="overlay-loading"
-        style="display:none;position:absolute;inset:0;
-               background:rgba(0,0,0,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-               align-items:center;justify-content:center;flex-direction:column;gap:14px;">
-        <div id="spinner"
-            style="width:48px;height:48px;border-radius:50%;
-                   border:3px solid rgba(255,255,255,.2);
-                   border-top-color:#fff;
-                   animation:spin .8s linear infinite;"></div>
-        <p id="loading-msg"
-            style="color:rgba(255,255,255,.8);font-size:14px;font-weight:500;">
-            Analisando...
-        </p>
+        style="display:none;position:absolute;inset:0;z-index:50;
+               background:rgba(0,0,0,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+               align-items:center;justify-content:center;flex-direction:column;gap:28px;">
+
+        <img id="loading-robo"
+             src="{{ asset('images/robo/aguardando.png') }}"
+             style="width:120px;height:184px;object-fit:contain;
+                    animation:roboFloat 2s ease-in-out infinite;" />
+
+        <div style="text-align:center;">
+            <p id="loading-msg"
+               style="color:rgba(255,255,255,.9);font-size:16px;font-weight:600;
+                      margin:0 0 12px;transition:opacity .3s ease;">
+                Analisando...
+            </p>
+            <div style="display:flex;gap:6px;justify-content:center;">
+                <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);animation:dot 1.2s .0s ease-in-out infinite;"></div>
+                <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);animation:dot 1.2s .2s ease-in-out infinite;"></div>
+                <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);animation:dot 1.2s .4s ease-in-out infinite;"></div>
+            </div>
+        </div>
     </div>
 
     {{-- PAINEL DEBUG (APP_DEBUG=true) --}}
@@ -384,6 +391,14 @@ window.__CG__ = {
 
 <style>
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes roboFloat {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+}
+@keyframes dot {
+    0%,80%,100% { opacity: .2; transform: scale(.8); }
+    40%          { opacity: 1;  transform: scale(1.2); }
+}
 @keyframes feedbackIn {
     from { transform: translateY(20px); opacity: 0; }
     to   { transform: translateY(0);    opacity: 1; }

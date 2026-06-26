@@ -104,7 +104,7 @@ async function openCamera() {
 
 function captureOrVerify() {
     // Para TTS imediatamente se estiver tocando
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
     State.speechActive = false;
     const btnListen = el('btn-listen');
     if (btnListen) btnListen.textContent = '🔊';
@@ -151,7 +151,7 @@ async function analyzeStep() {
     if (State.phase === 'analyzing' || !State.capturedBlob) return;
     setPhase('analyzing');
 
-    showLoading('Analisando...');
+    showLoading('analyze');
     disableShutter();
     hideFeedback();
 
@@ -528,44 +528,107 @@ function hideFeedback() {
 
 // ─── Loading ──────────────────────────────────────────────────────────────────
 
-function showLoading(msg = 'Processando...') {
+const LOADING_MESSAGES = {
+    analyze: [
+        'Analisando a foto...',
+        'Verificando ingredientes...',
+        'Conferindo o preparo...',
+        'Consultando a receita...',
+        'Quase lá...',
+    ],
+    tts: [
+        'Preparando o áudio...',
+        'Polly está pensando...',
+        'Carregando a voz...',
+    ],
+};
+
+let _loadingCycleInterval = null;
+
+function showLoading(msgOrKey = 'Processando...') {
     const ov = el('overlay-loading');
-    if (ov) {
-        ov.style.display = 'flex';
-        text('loading-msg', msg);
+    if (!ov) return;
+    ov.style.display = 'flex';
+
+    const roboImg = el('loading-robo');
+    if (roboImg && CG.roboImages?.aguardando) roboImg.src = CG.roboImages.aguardando;
+
+    clearInterval(_loadingCycleInterval);
+
+    const msgs = LOADING_MESSAGES[msgOrKey] ?? [msgOrKey];
+    const msgEl = el('loading-msg');
+
+    if (msgEl) msgEl.textContent = msgs[0];
+
+    if (msgs.length > 1) {
+        let idx = 0;
+        _loadingCycleInterval = setInterval(() => {
+            idx = (idx + 1) % msgs.length;
+            if (msgEl) {
+                msgEl.style.opacity = '0';
+                setTimeout(() => {
+                    msgEl.textContent  = msgs[idx];
+                    msgEl.style.opacity = '1';
+                }, 300);
+            }
+        }, 1800);
     }
 }
 
 function hideLoading() {
+    clearInterval(_loadingCycleInterval);
     hide('overlay-loading');
 }
 
-// ─── Text-to-Speech ───────────────────────────────────────────────────────────
+// ─── Text-to-Speech (Amazon Polly) ───────────────────────────────────────────
+
+let _currentAudio = null;
 
 function speak(text) {
-    if (!('speechSynthesis' in window) || !text) return;
-    window.speechSynthesis.cancel();
+    if (!text) return;
+
+    if (_currentAudio) {
+        _currentAudio.pause();
+        _currentAudio = null;
+    }
     State.speechActive = false;
 
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang  = 'pt-BR';
-    utt.rate  = 0.95;
-    utt.pitch = 1;
-
-    const voices = window.speechSynthesis.getVoices();
-    const ptVoice = voices.find(v => v.lang.startsWith('pt'));
-    if (ptVoice) utt.voice = ptVoice;
-
-    State.speechActive = true;
     const btn = el('btn-listen');
     if (btn) btn.textContent = '🔇';
 
-    utt.onend = utt.onerror = () => {
+    showLoading('tts');
+
+    fetch('/tts', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrf(),
+        },
+        body: JSON.stringify({ text }),
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('Polly error');
+        return res.blob();
+    })
+    .then(blob => {
+        hideLoading();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        _currentAudio = audio;
+        State.speechActive = true;
+        audio.play();
+        audio.onended = audio.onerror = () => {
+            State.speechActive = false;
+            if (btn) btn.textContent = '🔊';
+            URL.revokeObjectURL(url);
+            _currentAudio = null;
+        };
+    })
+    .catch(() => {
+        hideLoading();
         State.speechActive = false;
         if (btn) btn.textContent = '🔊';
-    };
-
-    window.speechSynthesis.speak(utt);
+    });
 }
 
 function speakInstruction() {
@@ -699,11 +762,6 @@ function esc(str) {
         .replace(/"/g,'&quot;');
 }
 
-// Carrega vozes quando disponíveis (alguns browsers carregam async)
-if ('speechSynthesis' in window) {
-    window.speechSynthesis.getVoices();
-    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-}
 
 // ─── API pública ──────────────────────────────────────────────────────────────
 

@@ -15,18 +15,28 @@ class RecipeController extends Controller
      * Sem sessão → tela de seleção de receita.
      * Com sessão → receita em andamento ou tela de conclusão.
      */
-    public function index(Request $request): View
+    public function selection(Request $request): View|\Illuminate\Http\RedirectResponse
+    {
+        // Se já tem sessão ativa, vai direto pra receita
+        if ($this->recipeService->getSession()) {
+            return redirect()->route('recipe.index');
+        }
+
+        return view('recipes.selection', [
+            'recipes'     => $this->recipeService->listRecipes(),
+            'isMockMode'  => config('vision.provider') === 'mock',
+            'isDebugMode' => (bool) env('RECIPE_DEBUG', false),
+        ]);
+    }
+
+    public function index(Request $request): View|\Illuminate\Http\RedirectResponse
     {
         $isMockMode  = config('vision.provider') === 'mock';
         $isDebugMode = (bool) env('RECIPE_DEBUG', false);
 
-        // Sem sessão ativa → tela de seleção
+        // Sem sessão ativa → redireciona pra seleção
         if (! $this->recipeService->getSession()) {
-            return view('recipes.selection', [
-                'recipes'     => $this->recipeService->listRecipes(),
-                'isMockMode'  => $isMockMode,
-                'isDebugMode' => $isDebugMode,
-            ]);
+            return redirect()->route('recipe.selection');
         }
 
         $state        = $this->recipeService->getCurrentState();
