@@ -55,10 +55,7 @@ window.__CG__ = {
         <button onclick="CozinhaGuiada.goToSelection()"
             style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);
                    border:1px solid rgba(255,255,255,.15);border-radius:100px;
-                   padding:10px 24px 10px 14px;font-size:14px;font-family:inherit;cursor:pointer;
-                   display:flex;align-items:center;gap:8px;justify-content:center;">
-            <img src="{{ asset('images/robo/falando.png') }}"
-                 style="width:32px;height:48px;object-fit:contain;object-position:bottom center;flex-shrink:0;" />
+                   padding:14px 32px;font-size:14px;font-family:inherit;cursor:pointer;">
             Escolher outra receita
         </button>
     </div>
