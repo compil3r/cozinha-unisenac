@@ -14,7 +14,9 @@ window.__CGS__ = {
 
     {{-- ── HEADER ─────────────────────────────────────────────────────────── --}}
     <div style="text-align:center;padding:52px 24px 32px;">
-        <div style="font-size:40px;margin-bottom:12px;">🍴</div>
+        <img src="{{ asset('images/robo/falando.png') }}"
+             style="width:72px;height:108px;object-fit:contain;object-position:bottom center;
+                    margin-bottom:12px;" />
         <h1 style="color:#fff;font-size:24px;font-weight:700;letter-spacing:-.5px;margin:0 0 6px;">
             Cozinha Guiada
         </h1>
