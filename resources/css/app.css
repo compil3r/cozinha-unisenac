@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/* ─── Fonte Figtree ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+/* ─── Tema customizado (Tailwind v4 — CSS-first) ────────────────────────────── */
+@theme {
+    /* Fonte padrão */
+    --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+
+    /* Paleta cream — fundo acolhedor de bancada */
+    --color-cream-50:  #fdfdf8;
+    --color-cream-100: #faf9f0;
+    --color-cream-200: #f5f2e3;
+    --color-cream-300: #ede8cf;
+
+    /* Paleta herb — verde suave de ervas */
+    --color-herb-50:  #f3f7f0;
+    --color-herb-100: #e4edd9;
+    --color-herb-200: #c6d9b2;
+    --color-herb-500: #6b9b4a;
+    --color-herb-600: #547a38;
+    --color-herb-700: #3f5c2a;
+
+    /* Sombras */
+    --shadow-soft: 0 2px 15px -3px rgb(0 0 0 / 0.05), 0 10px 20px -2px rgb(0 0 0 / 0.04);
+    --shadow-card: 0 1px 3px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.06);
+
+    /* Border radius extra */
+    --radius-3xl: 1.5rem;
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────────── */
+@layer base {
+    html {
+        font-family: var(--font-sans);
+    }
+
+    body {
+        background-color: var(--color-cream-100);
+        color: var(--color-stone-800, #292524);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    *:focus-visible {
+        outline: 2px solid var(--color-herb-500);
+        outline-offset: 2px;
+    }
+}
+
+/* ─── Componentes ────────────────────────────────────────────────────────────── */
+@layer components {
+    .card {
+        background-color: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--color-stone-100, #f5f5f4);
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background-color: #292524;
+        color: white;
+        font-weight: 500;
+        font-size: 0.875rem;
+        border-radius: 0.75rem;
+        padding: 0.625rem 1.25rem;
+        transition: background-color 150ms;
+        cursor: pointer;
+    }
+    .btn-primary:hover { background-color: #1c1917; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: 1px solid #e7e5e4;
+        color: #57534e;
+        font-weight: 500;
+        font-size: 0.875rem;
+        border-radius: 0.75rem;
+        padding: 0.625rem 1.25rem;
+        background: white;
+        transition: border-color 150ms, color 150ms;
+        cursor: pointer;
+    }
+    .btn-secondary:hover { border-color: #d6d3d1; color: #292524; }
+    .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-herb {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background-color: var(--color-herb-600);
+        color: white;
+        font-weight: 500;
+        font-size: 0.875rem;
+        border-radius: 0.75rem;
+        padding: 0.625rem 1.25rem;
+        transition: background-color 150ms;
+        cursor: pointer;
+    }
+    .btn-herb:hover { background-color: var(--color-herb-700); }
+    .btn-herb:disabled { background-color: #e7e5e4; color: #a8a29e; cursor: not-allowed; }
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────────────────── */
+@layer utilities {
+    .shadow-card { box-shadow: var(--shadow-card); }
+    .shadow-soft { box-shadow: var(--shadow-soft); }
+
+    .fade-in {
+        animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .slide-up {
+        animation: slideUp 0.3s ease-out;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
